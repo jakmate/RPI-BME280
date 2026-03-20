@@ -1,0 +1,27 @@
+[project]
+name = "RPI_BME280_sensor"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]>=0.135.1",
+    "pimoroni-bme280>=1.0.0",
+    "smbus2>=0.6.0",
+]
+
+[dependency-groups]
+dev = [
+    {include-group = "lint"}
+]
+lint = [
+    "black>=26.3.1",
+    "isort~=5.11.4",
+    "mypy>=1.19.1",
+    "pylint~=2.15.10",
+]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+force_sort_within_sections = true
