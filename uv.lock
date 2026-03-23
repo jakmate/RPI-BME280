@@ -1137,6 +1137,7 @@ dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "pimoroni-bme280" },
     { name = "smbus2" },
+    { name = "typer" },
 ]
 
 [package.dev-dependencies]
@@ -1158,6 +1159,7 @@ requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.135.1" },
     { name = "pimoroni-bme280", specifier = ">=1.0.0" },
     { name = "smbus2", specifier = ">=0.6.0" },
+    { name = "typer", specifier = ">=0.24.1" },
 ]
 
 [package.metadata.requires-dev]

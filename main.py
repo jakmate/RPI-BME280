@@ -22,29 +22,18 @@ Usage Examples:
 
 """
 
-import argparse
 import asyncio
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 from bme280 import BME280
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from smbus2 import SMBus
+import typer
 import uvicorn
 
-# Parse args
-parser = argparse.ArgumentParser(prog="main")
-parser.add_argument(
-    "-p", "--port", type=int, default=8080, help="Port number to be used (1-65535)"
-)
-parser.add_argument("-l", "--host", default="0.0.0.0", help="Bind Address")
-parser.add_argument("-c", "--cache", type=int, default=2, help="Cache TTL in seconds")
-args = parser.parse_args()
-
-# Initialise vars
-PORT = args.port
-HOST = args.host
-TTL = args.cache
+cli = typer.Typer()
 
 
 class State:
@@ -53,6 +42,7 @@ class State:
     def __init__(self):
         self.bus = None
         self.bme280 = None
+        self.ttl = None
         self.temp = None
         self.time = 0
 
@@ -70,6 +60,30 @@ class State:
                 rpi_timestamp_seconds {state.time}
                 """
 
+    def get_temp(self):
+        """Getter for temp"""
+        return self.temp
+
+    def set_temp(self, temperature):
+        """Setter for temp"""
+        self.temp = temperature
+
+    def get_time(self):
+        """Getter for time"""
+        return self.time
+
+    def set_time(self, time):
+        """Setter for time"""
+        self.time = time
+
+    def get_ttl(self):
+        """Getter for ttl"""
+        return self.ttl
+
+    def set_ttl(self, ttl):
+        """Setter for ttl"""
+        self.ttl = ttl
+
     def connect(self):
         """Initialise BME280"""
         self.bus = SMBus(1)
@@ -85,30 +99,28 @@ class State:
 state = State()
 
 
-async def get_temperature():
-    """Gets temperature using bme280 lib,
+async def read_temperature():
+    """Reads temperature using bme280 lib,
     updates state and goes to sleep for TTL seconds"""
     while True:
         try:
             if not state.bus:
                 state.connect()
-            temperature = round(state.bme280.get_temperature(), 1)
-            print(f"{temperature}°C {int(asyncio.get_event_loop().time())}")
-
-            state.temp = temperature
-            state.time = int(asyncio.get_event_loop().time())
+            state.set_temp(round(state.bme280.get_temperature(), 1))
+            state.set_time(int(asyncio.get_event_loop().time()))
+            print(f"{state.get_temp()}°C {state.get_time()}")
 
         except OSError as e:
             print(f"An I/O error occured {e}")
             state.disconnect()
 
-        await asyncio.sleep(TTL)
+        await asyncio.sleep(state.get_ttl())
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Runs get_temperature until cancelled"""
-    task = asyncio.create_task(get_temperature())
+    task = asyncio.create_task(read_temperature())
     yield
     task.cancel()
 
@@ -150,5 +162,16 @@ async def get_prometheus_metrics():
     return state.get_prometheus_state()
 
 
+@cli.command()
+def main(
+    port: Annotated[int, typer.Option(help="Port Number to be used (1-65535)")] = 8080,
+    host: Annotated[str, typer.Option(help="Bind Address")] = "0.0.0.0",
+    cache: Annotated[int, typer.Option(help="Cache TTL in seconds")] = 2,
+):
+    """Run fastapi app"""
+    state.set_ttl(cache)
+    uvicorn.run(app, host=host, port=port, reload=False)
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host=HOST, port=PORT, reload=False)
+    cli()
