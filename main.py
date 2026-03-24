@@ -12,18 +12,19 @@ Default config:
     Cache TTL: 2s
 
 CLI Arguments:
-    -l <ip>, --host <ip>   Bind Address
-    -p <n>, --port <n>     Port
-    -c <n>, --cache <n>    Cache TTL
-    -h, --help
+    --host <ip>   Bind Address
+    --port <n>     Port
+    --cache <n>    Cache TTL
+    --help
 
 Usage Examples:
-    uv run main.py -l 0.0.0.0 -p 9000 -c 5
+    uv run main.py --host 0.0.0.0 --port 9000 --cache 5
 
 """
 
 import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Annotated
 
 from bme280 import BME280
@@ -107,7 +108,7 @@ async def read_temperature():
             if not state.bus:
                 state.connect()
             state.set_temp(round(state.bme280.get_temperature(), 1))
-            state.set_time(int(asyncio.get_event_loop().time()))
+            state.set_time(int(datetime.utcnow().timestamp()))
             print(f"{state.get_temp()}°C {state.get_time()}")
 
         except OSError as e:
@@ -170,6 +171,7 @@ def main(
 ):
     """Run fastapi app"""
     state.set_ttl(cache)
+    print("HAHA")
     uvicorn.run(app, host=host, port=port, reload=False)
 
 
