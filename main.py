@@ -47,20 +47,6 @@ class State:
         self.temp = None
         self.time = 0
 
-    def get_json_state(self):
-        """Return state as json"""
-        return {"temp": state.temp, "time": state.time}
-
-    def get_prometheus_state(self):
-        """Returns prometheus formatted state"""
-        return f"""# HELP rpi_temperature_celsius Temperature from BME280
-                # TYPE rpi_temperature_celsius gauge
-                rpi_temperature_celsius {state.temp}
-                # HELP rpi_timestamp_seconds Unix timestamp when metric was sampled"
-                # TYPE rpi_timestamp_seconds gauge
-                rpi_timestamp_seconds {state.time}
-                """
-
     def get_temp(self):
         """Getter for temp"""
         return self.temp
@@ -107,12 +93,20 @@ async def read_temperature():
         try:
             if not state.bus:
                 state.connect()
+                await asyncio.sleep(0.1)
             state.set_temp(round(state.bme280.get_temperature(), 1))
             state.set_time(int(datetime.utcnow().timestamp()))
-            print(f"{state.get_temp()}°C {state.get_time()}")
 
         except OSError as e:
-            print(f"An I/O error occured {e}")
+            print(f"An OS error occured: {e}")
+            state.disconnect()
+            state.set_temp(None)
+        except ZeroDivisionError as e:
+            print(f"Division by zero occured: {e}")
+            state.set_temp(None)
+        except Exception as e:
+            print(f"New Exception {e}")
+            state.set_temp(None)
             state.disconnect()
 
         await asyncio.sleep(state.get_ttl())
@@ -150,17 +144,26 @@ async def add_headers(request: Request, call_next):
 
 
 # JSON endpoint
-@app.get("api/metrics")
+@app.get("/api/metrics")
 async def get_json_metrics():
     """Returns json formatted state"""
-    return state.get_json_state()
+    return {"temp": state.get_temp(), "time": state.get_time()}
 
 
 # Prometheus endpoint
 @app.get("/metrics")
 async def get_prometheus_metrics():
     """Returns prometheus formatted state"""
-    return state.get_prometheus_state()
+    lines = []
+    lines.append("# HELP rpi_temperature_celsius Temperature from BME280")
+    lines.append("# TYPE rpi_temperature_celsius gauge")
+    if state.get_temp() is not None:
+        lines.append(f"rpi_temperature_celsius {state.get_temp()}")
+    lines.append("# HELP rpi_timestamp_seconds Unix timestamp when metric was sampled")
+    lines.append("# TYPE rpi_timestamp_seconds gauge")
+    lines.append(f"rpi_timestamp_seconds {state.get_time()}")
+    lines.append("")
+    return "\n".join(lines)
 
 
 @cli.command()
@@ -171,7 +174,6 @@ def main(
 ):
     """Run fastapi app"""
     state.set_ttl(cache)
-    print("HAHA")
     uvicorn.run(app, host=host, port=port, reload=False)
 
 
