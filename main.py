@@ -8,7 +8,7 @@ Routes:
 
 Default config:
     Host: 0.0.0.0
-    Port: 8080
+    Port: 9090
     Cache TTL: 2s
 
 CLI Arguments:
@@ -28,7 +28,7 @@ from datetime import datetime
 from typing import Annotated
 
 from bme280 import BME280
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from smbus2 import SMBus
 import typer
@@ -155,20 +155,22 @@ async def get_json_metrics():
 async def get_prometheus_metrics():
     """Returns prometheus formatted state"""
     lines = []
-    lines.append("# HELP rpi_temperature_celsius Temperature from BME280")
-    lines.append("# TYPE rpi_temperature_celsius gauge")
+    lines.append("# HELP cc_metrics_ambient_temperature_celsius Temperature from BME280")
+    lines.append("# TYPE cc_metrics_ambient_temperature_celsius gauge")
     if state.get_temp() is not None:
-        lines.append(f"rpi_temperature_celsius {state.get_temp()}")
-    lines.append("# HELP rpi_timestamp_seconds Unix timestamp when metric was sampled")
-    lines.append("# TYPE rpi_timestamp_seconds gauge")
-    lines.append(f"rpi_timestamp_seconds {state.get_time()}")
-    lines.append("")
-    return "\n".join(lines)
+        lines.append(f"cc_metrics_ambient_temperature_celsius {state.get_temp()}")
+    lines.append("# HELP cc_metrics_ambient_timestamp_seconds Unix timestamp when metric was sampled")
+    lines.append("# TYPE cc_metrics_ambient_timestamp_seconds gauge")
+    lines.append(f"cc_metrics_ambient_timestamp_seconds {state.get_time()}\n")
+
+    content = "\n".join(lines)
+
+    return Response(content=content, media_type="text/plain; charset=utf-8")
 
 
 @cli.command()
 def main(
-    port: Annotated[int, typer.Option(help="Port Number to be used (1-65535)")] = 8080,
+    port: Annotated[int, typer.Option(help="Port Number to be used (1-65535)")] = 9090,
     host: Annotated[str, typer.Option(help="Bind Address")] = "0.0.0.0",
     cache: Annotated[int, typer.Option(help="Cache TTL in seconds")] = 2,
 ):
