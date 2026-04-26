@@ -1,9 +1,0 @@
-[FORMAT]
-max-line-length=88
-
-[BASIC]
-good-names=e,f,i
-
-[LOGGING]
-logging-format-style=old
-
