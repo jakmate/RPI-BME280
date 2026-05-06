@@ -5,7 +5,7 @@
 Routes:
     /metrics           Prometheus text-format
     /api/metrics       JSON state
-    /api/temperature   JSON temperaute
+    /api/temperature   JSON temperature
     /api/humidity      JSON humidity
     /api/pressure      JSON pressure
 
@@ -144,7 +144,7 @@ async def add_headers(
 # JSON endpoints
 @app.get("/api/metrics")
 async def get_json_metrics() -> dict[str, typing.Any]:
-    """Returns json formatted state."""
+    """Returns JSON formatted state."""
     return {
         "temp": state.temp,
         "humidity": state.humidity,
@@ -155,7 +155,7 @@ async def get_json_metrics() -> dict[str, typing.Any]:
 
 @app.get("/api/temperature")
 async def get_json_temperature() -> dict[str, typing.Any]:
-    """Returns json formatted temperature."""
+    """Returns JSON formatted temperature."""
     return {
         "temp": state.temp,
         "time": state.time,
@@ -164,7 +164,7 @@ async def get_json_temperature() -> dict[str, typing.Any]:
 
 @app.get("/api/humidity")
 async def get_json_humidity() -> dict[str, typing.Any]:
-    """Returns json formatted humidity."""
+    """Returns JSON formatted humidity."""
     return {
         "humidity": state.humidity,
         "time": state.time,
@@ -173,7 +173,7 @@ async def get_json_humidity() -> dict[str, typing.Any]:
 
 @app.get("/api/pressure")
 async def get_json_pressure() -> dict[str, typing.Any]:
-    """Returns json formatted pressure."""
+    """Returns JSON formatted pressure."""
     return {
         "pressure": state.pressure,
         "time": state.time,
